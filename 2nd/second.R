@@ -1,0 +1,66 @@
+data <- read.table(file="D:/Univer/Data mining/2nd/data8.txt")
+
+plot(data[[1]],data[[2]], type="l", xlab = "X", ylab = "Y", col = "blue")
+
+myBeta <- function(x, coef) {
+	coef <- as.vector(coef);
+	1/beta(coef[1],coef[2])*x^(coef[1]-1)*(1-x)^(coef[2]-1)
+}
+
+myWeibull <- function(x, coef) {
+	coef <- as.vector(coef);
+	coef[1]*coef[2]*x^(coef[2]-1)*exp(-coef[1]*x^coef[2])
+}
+
+myExponential <- function(x, l) {
+	l*exp(-l*x)
+}
+
+coeff <- c(1,1)
+
+betaFit <- nls(V2 ~ myBeta(V1, coef), data = data,  start = list(coef = coeff))
+weibullFit <- nls(V2 ~ myWeibull(V1, coef), data = data, start = list(coef = coeff))
+exponentialFit <- nls(V2 ~ myExponential(V1, l), data = data, start = list(l = 1))
+
+summary(betaFit)
+confint(betaFit,level=0.68)
+
+summary(weibullFit)
+confint(weibullFit,level=0.68)
+
+summary(exponentialFit)
+confint(exponentialFit,level=0.68)
+
+lines(data[[1]], predict(betaFit), col = "yellow", lwd = 4)
+lines(data[[1]], predict(weibullFit), col = "red", lwd = 2)
+lines(data[[1]], predict(exponentialFit), col = "green", lwd = 2)
+
+myChiST <- function(fun, fit) {
+	sum(((fun(data[[1]],coef(fit)) - data[[2]])/data[[3]])^2)/(length(data[[1]]) - length(coef(fit)) - 1)
+}
+
+myChiST(myBeta,betaFit)
+myChiST(myWeibull, weibullFit)
+myChiST(myExponential, exponentialFit)
+
+plot(data[[1]], (data[[2]] - predict(betaFit))/data[[3]], type="l", xlab = "X", ylab = "R", col = "blue", main="for Beta")
+grid(10, 10, lwd = 2)
+
+plot(data[[1]], (data[[2]] - predict(weibullFit))/data[[3]], type="l", xlab = "X", ylab = "R", col = "blue", main="for Weibull")
+grid(10, 10, lwd = 2)
+
+plot(data[[1]], (data[[2]] - predict(exponentialFit))/data[[3]], type="l", xlab = "X", ylab = "R", col = "blue", main="for Exponential")
+grid(10, 10, lwd = 2)
+
+Rk <- (data[[2]] - predict(betaFit))/data[[3]]
+
+Ak <- function(x){
+	sum(Rk[1:(length(Rk) - x + 1)] * Rk[x : length(Rk)]) * length(Rk) / (length(Rk) - x + 1) / sum(Rk^2)
+}
+
+plot(data[[1]], Rk, type="l", ylab = "Rk", xlab = "x", col="blue")
+grid(10, 10, lwd = 2)
+
+plot((1:100),lapply((1:100),Ak), type="l", ylab = "Ak", xlab = "k", col="blue")
+grid(10, 10, lwd = 2)
+
